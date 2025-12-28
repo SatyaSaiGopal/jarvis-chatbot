@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. | Advanced Learning Interface</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        :root {
+            --primary-glow: #00f3ff;
+            --secondary-glow: #0088ff;
+            --accent-red: #ff003c;
+            --accent-gold: #ffd700;
+            --chemistry-green: #0aff6c;
+            --glass-bg: rgba(0, 15, 30, 0.65);
+            --glass-border: rgba(0, 243, 255, 0.3);
+            --text-main: #e0f7ff;
+            --font-tech: 'Orbitron', sans-serif;
+            --font-data: 'Rajdhani', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            cursor: none;
+            /* Custom cursor active */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: var(--text-main);
+            font-family: var(--font-data);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1500px;
+            /* Deep 3D space for the hologram */
+        }
+
+        /* --- Custom Iron Man Cursor --- */
+        #cursor {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--primary-glow);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            box-shadow: 0 0 10px var(--primary-glow);
+            transition: width 0.2s, height 0.2s;
+            mix-blend-mode: screen;
+        }
+
+        #cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-red);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* --- Background & Hologram Beams --- */
+        .background-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Tries to load user image, falls back to tech gradient */
+            /* Ensure the image is in the 'static' folder for Flask or root for local testing */
+            background: url('Gemini_Generated_Image_k7a121k7a121k7a1.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: -3;
+        }
+
+        /* Fallback overlay if image is missing or to darken it */
+        .background-layer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 10% 90%, rgba(0, 40, 80, 0.6) 0%, rgba(0, 0, 0, 0.8) 80%);
+        }
+
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* The Repulsor / Projection Source (Visual Anchor) */
+        .repulsor-anchor {
+            position: absolute;
+            bottom: 5%;
+            left: 10%;
+            /* Positioning to mimic holding the UI */
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff 10%, var(--primary-glow) 40%, transparent 70%);
+            box-shadow: 0 0 40px var(--primary-glow), 0 0 80px var(--secondary-glow);
+            z-index: 5;
+            animation: reactor-pulse 3s infinite ease-in-out;
+            opacity: 0.9;
+        }
+
+        /* Hand silhouette hint (optional, simple circle) */
+        .repulsor-anchor::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border: 1px solid var(--primary-glow);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: spin 10s linear infinite;
+        }
+
+        /* Connection Beams (SVG) */
+        .holo-beams {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .beam {
+            stroke: var(--primary-glow);
+            stroke-width: 1.5;
+            fill: none;
+            stroke-dasharray: 5, 15;
+            opacity: 0.5;
+            filter: drop-shadow(0 0 5px var(--primary-glow));
+            animation: beam-flow 0.5s linear infinite;
+        }
+
+        /* --- Iron Man Structure (Centered & High Visibility) --- */
+        .iron-man-container {
+            position: absolute;
+            top: 58%;
+            /* Moved down */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 420px;
+            /* Reduced size to fit chat box */
+            /* height: 550px; Remove fixed height to maintain aspect ratio if needed, or set to contain */
+            height: 550px;
+            z-index: 50;
+            /* Bring to front to ensure visibility over chat */
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .iron-man-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            /* Enhanced Visibility: Brighter, Stronger Glow */
+            filter: drop-shadow(0 0 35px rgba(0, 243, 255, 1)) grayscale(100%) sepia(100%) hue-rotate(130deg) brightness(1.8) contrast(1.3);
+            mix-blend-mode: screen;
+            opacity: 1;
+            /* Fully visible */
+            animation: holo-breath 4s ease-in-out infinite;
+        }
+
+        .iron-man-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center center;
+            opacity: 1;
+            /* Fully visible */
+            /* Subtle fade only at very bottom */
+            mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+        }
+
+        /* Scanline / Glitch Overlay */
+        .iron-man-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg,
+                    rgba(0, 243, 255, 0.1) 0px,
+                    rgba(0, 243, 255, 0.1) 1px,
+                    transparent 1px,
+                    transparent 3px);
+            pointer-events: none;
+            opacity: 0.7;
+            /* Increased scanline visibility */
+            animation: scanline 6s linear infinite;
+            z-index: 2;
+        }
+
+        /* Speaking Animation State */
+        .iron-man-wrapper.speaking {
+            filter: drop-shadow(0 0 20px rgba(0, 243, 255, 0.9)) grayscale(100%) sepia(100%) hue-rotate(130deg) brightness(1.4) contrast(1.3);
+            animation: holo-talk 0.2s infinite alternate;
+            /* Rapid pulse when talking */
+        }
+
+        @keyframes holo-breath {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.85;
+                /* Don't fade too much */
+                transform: scale(0.98);
+            }
+        }
+
+        @keyframes holo-talk {
+            0% {
+                opacity: 0.9;
+                transform: scale(1);
+                filter: drop-shadow(0 0 25px rgba(0, 243, 255, 1)) grayscale(100%) sepia(100%) hue-rotate(130deg) brightness(1.5);
+            }
+
+            100% {
+                opacity: 0.7;
+                transform: scale(1.02);
+                filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.5)) grayscale(100%) sepia(100%) hue-rotate(130deg) brightness(1.2);
+            }
+        }
+
+        @keyframes scanline {
+            0% {
+                background-position: 0% 0%;
+            }
+
+            100% {
+                background-position: 0% 100%;
+            }
+        }
+
+        /* Tech Grid Overlay on Face */
+        .iron-man-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(var(--primary-glow) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.2;
+            z-index: 1;
+        }
+
+        /* --- Audio Reactive Elements --- */
+        /* EYES */
+        .holo-eye {
+            position: absolute;
+            width: 25px;
+            height: 8px;
+            background: #fff;
+            border-radius: 2px;
+            box-shadow: 0 0 10px #fff, 0 0 20px var(--primary-glow);
+            opacity: 0.8;
+            top: 28%;
+            /* Adjust based on image face position */
+            z-index: 30;
+            mix-blend-mode: screen;
+        }
+
+        .eye-left {
+            left: 38%;
+            transform: rotate(5deg);
+        }
+
+        .eye-right {
+            right: 38%;
+            transform: rotate(-5deg);
+        }
+
+        /* MOUTH / SPEECH VISUALIZER */
+        .holo-mouth-viz {
+            position: absolute;
+            top: 36%;
+            /* Adjust for chin area */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            z-index: 30;
+            opacity: 0.3;
+            /* Dim when idle */
+            transition: opacity 0.2s;
+        }
+
+        .mouth-bar {
+            width: 3px;
+            height: 5px;
+            background: var(--primary-glow);
+            border-radius: 1px;
+            transition: height 0.1s;
+        }
+
+        .talking .holo-mouth-viz {
+            opacity: 1;
+        }
+
+        .talking .holo-mouth-viz .mouth-bar {
+            animation: equalizer 0.5s infinite ease-in-out;
+        }
+
+        .talking .holo-eye {
+            box-shadow: 0 0 15px #fff, 0 0 30px var(--primary-glow);
+            opacity: 1;
+        }
+
+        /* Micro Status Text */
+        .hologram-status-group {
+            position: absolute;
+            top: 15%;
+            left: -10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+            z-index: 25;
+        }
+
+        .hologram-label {
+            font-family: var(--font-tech);
+            color: var(--primary-glow);
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px var(--primary-glow);
+            background: rgba(0, 15, 30, 0.8);
+            padding: 2px 6px;
+            border-right: 2px solid var(--primary-glow);
+        }
+
+        .status-active {
+            color: var(--accent-gold);
+            border-color: var(--accent-gold);
+        }
+
+        /* Floating Particles */
+        .holo-particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--primary-glow);
+            border-radius: 50%;
+            opacity: 0;
+            animation: float-up 3s infinite linear;
+        }
+
+        /* --- Main Hologram Container (Unchanged Layout) --- */
+        .holo-container {
+            width: 1000px;
+            height: 650px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+            /* Smooth parallax */
+            display: grid;
+            grid-template-columns: 260px 1fr 220px;
+            grid-template-rows: 80px 1fr 120px;
+            gap: 20px;
+            padding: 20px;
+            /* Ensure it's centered, Iron Man is overlay on left */
+            margin: 0 auto;
+        }
+
+        /* Glass Panels Base Style */
+        .panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        /* 1. Header (Top Bar) */
+        .header-panel {
+            grid-column: 1 / -1;
+            clip-path: polygon(0 0, 100% 0, 95% 100%, 20% 100%, 15% 70%, 5% 70%, 0 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 243, 255, 0.1) 50%, rgba(0, 0, 0, 0) 100%);
+        }
+
+        .system-status {
+            font-family: var(--font-tech);
+            font-size: 1.5rem;
+            color: var(--primary-glow);
+            text-shadow: 0 0 10px var(--primary-glow);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* 2. Sidebar (Left Controls) */
+        .sidebar-panel {
+            grid-row: 2 / 4;
+            clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%, 0 10%);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .mode-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Hex Buttons */
+        .hex-btn {
+            width: 100%;
+            height: 65px;
+            background: transparent;
+            border: none;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--font-tech);
+            color: var(--text-main);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            overflow: visible;
+        }
+
+        .hex-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 243, 255, 0.05);
+            /* Complex shape for button */
+            clip-path: polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0% 50%);
+            border: 1px solid var(--primary-glow);
+            transition: all 0.3s;
+            z-index: -1;
+        }
+
+        .hex-btn:hover .hex-bg {
+            background: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 15px var(--primary-glow);
+            transform: scale(1.05);
+        }
+
+        .hex-btn.active .hex-bg {
+            background: var(--primary-glow);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .hex-btn.active {
+            color: #000;
+            font-weight: 800;
+        }
+
+        /* 3. Main Chat Area */
+        .chat-panel {
+            grid-column: 2 / 3;
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            border: none;
+            background: none;
+            box-shadow: none;
+            backdrop-filter: none;
+            position: relative;
+        }
+
+        .chat-display {
+            flex-grow: 1;
+            background: linear-gradient(180deg, rgba(0, 15, 30, 0.8) 0%, rgba(0, 10, 20, 0.5) 100%);
+            border: 1px solid var(--glass-border);
+            /* Angled corners for chat window */
+            clip-path: polygon(2% 0, 98% 0, 100% 2%, 100% 98%, 98% 100%, 2% 100%, 0 98%, 0 2%);
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        /* Decoration Lines */
+        .chat-deco-line {
+            position: absolute;
+            bottom: 25px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--primary-glow);
+            opacity: 0.3;
+        }
+
+        .chat-input-area {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .input-field {
+            flex-grow: 1;
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            height: 100%;
+            color: var(--primary-glow);
+            font-family: var(--font-data);
+            font-size: 1.2rem;
+            padding: 0 25px;
+            /* Tech shape for input */
+            clip-path: polygon(0 0, 95% 0, 100% 30%, 100% 100%, 5% 100%, 0 70%);
+            outline: none;
+            transition: box-shadow 0.3s;
+        }
+
+        .input-field:focus {
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2) inset;
+        }
+
+        .send-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--primary-glow);
+            color: var(--primary-glow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            box-shadow: 0 0 10px var(--primary-glow);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            background: var(--primary-glow);
+            color: #000;
+            transform: rotate(90deg);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        /* 4. Right Data Panel */
+        .data-panel {
+            grid-column: 3 / 4;
+            grid-row: 2 / 4;
+            clip-path: polygon(0 0, 80% 0, 100% 20%, 100% 100%, 0 100%, 0 80%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .arc-reactor-viz {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .ring-spin {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border-top: 5px solid var(--primary-glow);
+            border-right: 5px solid transparent;
+            animation: spin 2s linear infinite;
+            filter: drop-shadow(0 0 5px var(--primary-glow));
+        }
+
+        .ring-spin-inner {
+            position: absolute;
+            width: 65%;
+            height: 65%;
+            border-radius: 50%;
+            border-bottom: 5px solid var(--accent-red);
+            border-left: 5px solid transparent;
+            animation: spin-reverse 3s linear infinite;
+        }
+
+        /* Messages Styling */
+        .msg {
+            max-width: 85%;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .msg.ai {
+            align-self: flex-start;
+            border-left: 4px solid var(--primary-glow);
+            background: linear-gradient(90deg, rgba(0, 243, 255, 0.15) 0%, transparent 100%);
+            clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            border-right: 4px solid var(--accent-gold);
+            background: linear-gradient(-90deg, rgba(255, 215, 0, 0.15) 0%, transparent 100%);
+            text-align: right;
+            clip-path: polygon(5% 0, 100% 0, 100% 100%, 0 100%);
+        }
+
+        .msg-label {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: var(--font-tech);
+        }
+
+        /* Animations */
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin-reverse {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(-360deg);
+            }
+        }
+
+        @keyframes reactor-pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+                box-shadow: 0 0 60px var(--primary-glow);
+            }
+        }
+
+        @keyframes beam-flow {
+            0% {
+                stroke-dashoffset: 0;
+            }
+
+            100% {
+                stroke-dashoffset: -20;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes holo-float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes scanline {
+            0% {
+                top: -100%;
+            }
+
+            100% {
+                top: 200%;
+            }
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(0);
+                opacity: 0;
+            }
+
+            20% {
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes equalizer {
+
+            0%,
+            100% {
+                height: 5px;
+            }
+
+            50% {
+                height: 15px;
+                background: var(--accent-red);
+                box-shadow: 0 0 5px var(--accent-red);
+            }
+        }
+
+        /* Floating Text for Startup */
+        #startup-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            color: var(--primary-glow);
+            text-shadow: 0 0 20px var(--primary-glow);
+            font-family: var(--font-tech);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            letter-spacing: 5px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-glow);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="cursor"></div>
+
+    <!-- Background visual assets -->
+    <div class="background-layer"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Iron Man Hologram Structure (Left Side - VERTICALLY CENTERED OVERLAY) -->
+    <div class="iron-man-container" id="iron-man-struct">
+
+        <!-- Status Group Removed -->
+
+        <!-- The Holographic Image Wrapper -->
+        <div class="iron-man-wrapper" id="holo-wrapper">
+            <!-- Eyes -->
+            <div class="holo-eye eye-left"></div>
+            <div class="holo-eye eye-right"></div>
+
+            <!-- Mouth Viz -->
+            <div class="holo-mouth-viz">
+                <div class="mouth-bar" style="animation-delay: 0.2s"></div>
+                <div class="mouth-bar" style="animation-delay: 0.1s"></div>
+                <div class="mouth-bar" style="animation-delay: 0s"></div>
+            </div>
+        </div>
+
+        <!-- Particles -->
+        <div class="holo-particle" style="left: 20%; top: 80%; animation-delay: 0s;"></div>
+        <div class="holo-particle" style="left: 60%; top: 90%; animation-delay: 1s;"></div>
+        <div class="holo-particle" style="left: 80%; top: 70%; animation-delay: 2s;"></div>
+    </div>
+
+    <!-- The "Hand" Anchor Point (Repulsor) -->
+    <div class="repulsor-anchor" id="repulsor"></div>
+
+    <!-- SVG for dynamic projection beams -->
+    <svg class="holo-beams" width="100%" height="100%">
+        <path id="beam1" class="beam" d="" />
+        <path id="beam2" class="beam" d="" />
+        <path id="beam3" class="beam" d="" />
+        <path id="beam4" class="beam" d="" />
+    </svg>
+
+    <div id="startup-text">J.A.R.V.I.S ONLINE</div>
+
+    <!-- The Interface -->
+    <div class="holo-container" id="interface">
+
+        <!-- Header -->
+        <div class="panel header-panel">
+            <div class="system-status">
+                <i class="fas fa-atom fa-spin" style="font-size: 1.2rem;"></i>
+                <span id="system-title">PHYSICS PROTOCOL</span>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-family: 'Orbitron'; color: var(--accent-red); font-size: 0.8rem; margin-bottom: 2px;">
+                    SECURE CONNECTION</div>
+                <div style="font-size: 0.7rem; color: #aaa;">IP: 192.168.STARK.01</div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="panel sidebar-panel">
+            <div style="font-size: 0.8rem; color: var(--secondary-glow); margin-bottom: -10px;">MODE SELECT</div>
+            <div class="mode-selector">
+                <button class="hex-btn active" onclick="setMode('physics')">
+                    <div class="hex-bg"></div>
+                    <i class="fas fa-atom" style="margin-right: 12px;"></i> PHYSICS
+                </button>
+                <button class="hex-btn" onclick="setMode('chemistry')">
+                    <div class="hex-bg"></div>
+                    <i class="fas fa-flask" style="margin-right: 12px;"></i> CHEMISTRY
+                </button>
+                <button class="hex-btn"
+                    onclick="addMsg('ai', 'Accessing Stark Industries Formula Database... Please specify the variable.')">
+                    <div class="hex-bg"></div>
+                    <i class="fas fa-square-root-alt" style="margin-right: 12px;"></i> FORMULAS
+                </button>
+            </div>
+
+            <div style="margin-top: auto; border-top: 1px solid rgba(0,243,255,0.3); padding-top: 20px;">
+                <div
+                    style="font-size: 0.7rem; color: #888; margin-bottom: 8px; display:flex; justify-content:space-between;">
+                    <span>CPU LOAD</span>
+                    <span style="color:var(--accent-red)">89%</span>
+                </div>
+                <div
+                    style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); position: relative; clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);">
+                    <div
+                        style="width: 89%; height: 100%; background: var(--accent-red); box-shadow: 0 0 10px var(--accent-red); animation: pulse-bar 2s infinite;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-panel">
+            <div class="chat-display" id="chat-box">
+                <div class="msg ai">
+                    <div class="msg-label">J.A.R.V.I.S</div>
+                    Good evening. Physics module initialized. I am ready to assist with Quantum Mechanics, Relativity,
+                    or Thermodynamics. Where should we begin?
+                </div>
+            </div>
+            <div class="chat-deco-line"></div>
+
+            <div class="chat-input-area">
+                <input type="text" class="input-field" placeholder="Enter command..." id="user-input"
+                    onkeypress="handleKey(event)">
+                <button class="send-btn" onclick="sendMsg()">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Data Panel -->
+        <div class="panel data-panel">
+            <div style="font-family: 'Orbitron'; font-size: 0.9rem; letter-spacing: 2px; color: var(--text-main);">ARC
+                REACTOR</div>
+            <div class="arc-reactor-viz">
+                <div class="ring-spin"></div>
+                <div class="ring-spin-inner"></div>
+                <i class="fas fa-circle-notch fa-spin"
+                    style="color: #fff; font-size: 2rem; text-shadow: 0 0 15px #fff;"></i>
+            </div>
+
+            <div style="width: 100%; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 5px;">
+                    <span>ENERGY OUTPUT</span>
+                    <span>340 GJ/s</span>
+                </div>
+                <div style="display: flex; gap: 3px;">
+                    <div style="height: 12px; width: 12px; background: var(--primary-glow); opacity: 1;"></div>
+                    <div style="height: 12px; width: 12px; background: var(--primary-glow); opacity: 0.9;"></div>
+                    <div style="height: 12px; width: 12px; background: var(--primary-glow); opacity: 0.8;"></div>
+                    <div style="height: 12px; width: 12px; background: var(--primary-glow); opacity: 0.6;"></div>
+                    <div style="height: 12px; width: 12px; background: var(--primary-glow); opacity: 0.4;"></div>
+                    <div style="height: 12px; width: 12px; background: #333;"></div>
+                </div>
+            </div>
+
+            <!-- Fake Data Stream -->
+            <div
+                style="margin-top: auto; font-family: monospace; font-size: 0.65rem; color: var(--secondary-glow); opacity: 0.8; overflow: hidden; width: 100%; text-align: left; line-height: 1.4;">
+                <span style="color: var(--accent-red)">> WARNING: EXAM_NEAR</span><br>
+                > CALC_VELOCITY_X<br>
+                > RENDER_HOLOGRAM<br>
+                > SYNC_COMPLETE
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Custom Cursor Logic
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+
+            // 3D Parallax Effect
+            const container = document.getElementById('interface');
+            const x = (window.innerWidth / 2 - e.clientX) / 50; // Divide by 50 for subtle effect
+            const y = (window.innerHeight / 2 - e.clientY) / 50;
+
+            // Apply rotation based on mouse position
+            container.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+
+            updateBeams(); // Redraw beams when UI moves
+        });
+
+        // Beam Update Logic (Connects Repulsor to UI Corners)
+        function updateBeams() {
+            const repulsor = document.getElementById('repulsor').getBoundingClientRect();
+            const interfaceBox = document.getElementById('interface').getBoundingClientRect();
+
+            // Repulsor Center Coords
+            const rX = repulsor.left + repulsor.width / 2;
+            const rY = repulsor.top + repulsor.height / 2;
+
+            // Target Points on the Interface (Corners)
+            // We use fixed offsets to target specific "mounting points" on the UI
+            const p1 = { x: interfaceBox.left + 20, y: interfaceBox.top + 80 }; // Top Left Sidebar
+            const p2 = { x: interfaceBox.left + 20, y: interfaceBox.bottom - 80 }; // Bottom Left Sidebar
+            const p3 = { x: interfaceBox.right - 20, y: interfaceBox.bottom - 20 }; // Bottom Right Data
+            const p4 = { x: interfaceBox.right - 20, y: interfaceBox.top + 20 }; // Top Right Data
+
+            // Update SVG paths
+            document.getElementById('beam1').setAttribute('d', `M${rX},${rY} L${p1.x},${p1.y}`);
+            document.getElementById('beam2').setAttribute('d', `M${rX},${rY} L${p2.x},${p2.y}`);
+            document.getElementById('beam3').setAttribute('d', `M${rX},${rY} L${p3.x},${p3.y}`);
+            document.getElementById('beam4').setAttribute('d', `M${rX},${rY} L${p4.x},${p4.y}`);
+        }
+
+        // Handle Chat Input
+        function handleKey(e) {
+            if (e.key === 'Enter') sendMsg();
+        }
+
+        // --- VOICE SYNTHESIS LOGIC (J.A.R.V.I.S. VOICE) ---
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+
+            // Cancel any current speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            const voices = window.speechSynthesis.getVoices();
+
+            // --- VOICE SELECTION PRIORITY ---
+            // Preference for Deep/Authoritative Male Voices
+            let selectedVoice = voices.find(v => v.name.includes('Google UK English Male')) ||
+                voices.find(v => v.name.includes('Microsoft David')) ||
+                voices.find(v => v.name.includes('Daniel')) ||
+                voices.find(v => v.lang === 'en-GB' && v.name.includes('Male')) ||
+                voices.find(v => v.lang === 'en-US');
+
+            if (selectedVoice) utterance.voice = selectedVoice;
+
+            // --- TONY STARK / AI PRESENCE TUNING ---
+            utterance.rate = 0.9;  // Deliberate, calm
+            utterance.pitch = 0.6; // Deeper, more authority
+            utterance.volume = 1.0;
+
+            const holoWrapper = document.getElementById('holo-wrapper'); // Targeted wrapper for animation
+            const statusText = document.getElementById('status-main'); // Correct status ID
+
+            // Lip Sync & Animation Triggers
+            utterance.onstart = () => {
+                if (holoWrapper) holoWrapper.classList.add('speaking');
+                if (statusText) {
+                    statusText.innerText = "VOCALIZING...";
+                    statusText.classList.add('status-active');
+                }
+            };
+
+            utterance.onend = () => {
+                if (holoWrapper) holoWrapper.classList.remove('speaking');
+                if (statusText) {
+                    statusText.innerText = "SYSTEM ONLINE";
+                    statusText.classList.remove('status-active');
+                }
+            };
+
+            utterance.onerror = () => {
+                if (holoWrapper) holoWrapper.classList.remove('speaking');
+                if (statusText) statusText.innerText = "ERROR";
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- BACKEND CONNECTION LOGIC ---
+        async function sendMsg() {
+            const input = document.getElementById('user-input');
+            const text = input.value;
+            if (!text) return;
+
+            // 1. Show User Message
+            addMsg('user', text);
+            input.value = '';
+
+            // Status Update
+            const statusText = document.getElementById('status-main');
+            if (statusText) {
+                statusText.innerText = "ANALYZING...";
+                statusText.classList.add('status-active');
+            }
+
+            // 2. Visual Loading State (J.A.R.V.I.S thinking)
+            const reactor = document.querySelector('.arc-reactor-viz');
+            reactor.style.transform = 'scale(1.15)';
+            reactor.style.boxShadow = '0 0 40px var(--primary-glow)';
+
+            try {
+                let replyText;
+
+                // Check if we are in a production/local environment vs sandbox
+                const isSandbox = window.location.origin === 'null' || window.location.protocol === 'blob:' || window.location.href.includes('googleusercontent');
+
+                if (isSandbox) {
+                    // Simulate delay for preview mode
+                    await new Promise(r => setTimeout(r, 1500));
+                    replyText = "Processing request. I have calibrated the visuals to your specifications, Sir. The suit interface is active.";
+                } else {
+                    // 3. Send to Backend
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: text })
+                    });
+
+                    if (!response.ok) throw new Error('Network response was not ok');
+
+                    const data = await response.json();
+                    replyText = data.reply;
+                }
+
+                // 4. Display AI Response & Speak
+                addMsg('ai', replyText);
+                speakText(replyText); // TRIGGER VOICE
+
+            } catch (error) {
+                console.error('Error:', error);
+                const errMsg = "WARNING: Connection to Stark Industries Server failed. Ensure Flask is running on port 8001.";
+                addMsg('ai', errMsg);
+                speakText(errMsg);
+                if (statusText) statusText.innerText = "OFFLINE";
+            } finally {
+                // Reset visuals
+                reactor.style.transform = 'scale(1)';
+                reactor.style.boxShadow = 'none';
+            }
+        }
+
+        function addMsg(type, text) {
+            const box = document.getElementById('chat-box');
+            const div = document.createElement('div');
+            div.className = `msg ${type}`;
+            div.innerHTML = `<div class="msg-label">${type === 'user' ? 'YOU' : 'J.A.R.V.I.S'}</div>${text}`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+
+            // Visual Interaction: Pulse the reactor when receiving/sending
+            const reactor = document.querySelector('.arc-reactor-viz');
+            reactor.style.transform = 'scale(1.15)';
+            reactor.style.boxShadow = '0 0 30px var(--primary-glow)';
+            setTimeout(() => {
+                reactor.style.transform = 'scale(1)';
+                reactor.style.boxShadow = 'none';
+            }, 200);
+        }
+
+        // Mode Switching Logic
+        function setMode(mode) {
+            const root = document.documentElement;
+            const title = document.getElementById('system-title');
+            const btns = document.querySelectorAll('.hex-btn');
+
+            // Reset buttons
+            btns.forEach(b => b.classList.remove('active'));
+
+            let msg = "";
+            if (mode === 'physics') {
+                root.style.setProperty('--primary-glow', '#00f3ff'); // Cyan
+                root.style.setProperty('--secondary-glow', '#0088ff');
+                title.innerText = "PHYSICS PROTOCOL";
+                btns[0].classList.add('active');
+                msg = "Switched to Physics Mode. Ready for kinematic calculations.";
+            } else if (mode === 'chemistry') {
+                root.style.setProperty('--primary-glow', '#0aff6c'); // Green
+                root.style.setProperty('--secondary-glow', '#00ff88');
+                title.innerText = "CHEMISTRY PROTOCOL";
+                btns[1].classList.add('active');
+                msg = "Chemistry Mode engaged. Periodic table loaded.";
+            }
+
+            addMsg('ai', msg);
+            speakText(msg);
+        }
+
+        // Startup Sequence
+        window.onload = () => {
+            const ui = document.getElementById('interface');
+            const text = document.getElementById('startup-text');
+            const ironMan = document.getElementById('iron-man-struct');
+
+            // Initial State
+            ui.style.opacity = '0';
+            ui.style.transform = 'scale(0.8) rotateX(20deg)';
+
+            // Text Fade In
+            setTimeout(() => {
+                text.style.opacity = '1';
+                text.style.transition = 'opacity 0.5s';
+            }, 300);
+
+            // UI Boot up
+            setTimeout(() => {
+                text.style.opacity = '0';
+                ui.style.transition = 'all 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                ui.style.opacity = '1';
+                ui.style.transform = 'scale(1) rotateX(0deg)';
+
+                // Show Iron Man
+                ironMan.style.opacity = '1';
+
+                updateBeams(); // Init beams
+
+                // Play startup sound visualization (visual only)
+                document.querySelector('.repulsor-anchor').style.transform = "scale(1.5)";
+                setTimeout(() => document.querySelector('.repulsor-anchor').style.transform = "scale(1)", 300);
+
+                // Pre-load voices for speech synthesis
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.getVoices();
+                }
+
+            }, 1800);
+        };
+
+        // Ensure beams stay connected on window resize
+        window.onresize = updateBeams;
+
+    </script>
+</body>
+
+</html>
